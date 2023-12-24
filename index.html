@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>URL Checker</title>
+</head>
+<body>
+	<h2>URL Checker</h2>
+	<button>Check!</button><br><br>
+  <textarea rows="30" cols="70" placeholder="ここに入力(改行して複数のURLを入力)"></textarea>
+	<textarea rows="30" cols="70" placeholder="使用できるURL" disabled></textarea>
+
+	<script>
+		/**
+		 * [開発メモ]
+		 * 
+		 * URL.canParse を使おうとしたら、使えず「Error: TypeError: URL.canParse is not a function」がでたので
+		 * 仕様書を見てみたところ、Google Chrome 120以降だったので関数作りました
+		 * 
+		 * @link https://developer.mozilla.org/ja/docs/Web/API/URL/canParse_static
+		 * @param { string } url 
+		 */
+		function checkURL(url) {
+			try {
+				new URL(url);
+				return true
+			} catch (e) {
+				return false;
+			}
+		}
+
+		document.querySelector("button").addEventListener("click", async () => {
+			const urls = document.querySelectorAll("textarea")[0].value.trim();
+
+			if (!urls) return alert("URLを入力してください");
+
+			const canUseURLs = [];
+
+			await Promise.all(urls.split("\n").map(async url => {
+				try {
+					if (URL.canParse) {
+						if (!URL.canParse(url)) return;
+					} else {
+						if (!checkURL(url)) return;
+					}
+
+					const req = await fetch(url);
+					if (!req.ok) return;
+
+					canUseURLs.push(url);
+				} catch(e) {
+					// CORSについてはあとでどうにかする
+				}
+			}));
+
+			document.querySelectorAll("textarea")[1].value = canUseURLs.join("\n");
+
+			alert("done!\n処理が完了しました！");
+		});
+	</script>
+</body>
+</html>
